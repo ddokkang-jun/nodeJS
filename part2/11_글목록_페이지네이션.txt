@@ -103,6 +103,8 @@ app.get('/list/1', async (요청, 응답) => {
  
 
 await db.collection('post').find().limit(5).toArray() 
+
+
 이러면 1 ~ 5번째 글을 가져와줍니다. 
 
  
@@ -110,6 +112,8 @@ await db.collection('post').find().limit(5).toArray()
  
 
 await db.collection('post').find().skip(5).limit(5).toArray() 
+
+
 이러면 6 ~ 10번째 글을 가져와줍니다. 
 
 .skip(x) 은 맨 앞에서 x개 스킵하고 가져와달라는 뜻입니다. 
@@ -132,6 +136,8 @@ app.get('/list/1', async (요청, 응답) => {
   let result = await db.collection('post').find().skip(0).limit(5).toArray() 
   응답.render('list.ejs', { 글목록 : result })
 }) 
+
+
 그래서 /list/1 페이지를 완성해봤습니다. 들어가면 게시물 5개만 잘보임 
 
 /list/2, /list/3 페이지도 만들고 싶은데 이것들은 비슷하기 때문에 URL 파라미터 문법을 써봅시다. 
@@ -146,6 +152,8 @@ app.get('/list/:id', async (요청, 응답) => {
   let result = await db.collection('post').find().skip(0).limit(5).toArray() 
   응답.render('list.ejs', { 글목록 : result })
 }) 
+
+
 이러면 /list/2, /list/3 페이지도 완성입니다. 
 
 근데 이렇게만 냅두면 어디로 접속하든 1~5번 게시물만 가져올 것 같습니다. 
@@ -175,6 +183,8 @@ app.get('/list/:id', async (요청, 응답) => {
     .skip( (요청.params.id - 1) * 5 ).limit(5).toArray() 
   응답.render('list.ejs', { 글목록 : result })
 }) 
+
+
 (유저가 URL에 입력한거 - 1) * 5 하면 될 것 같군요. 
 
 그럼 /list/2 접속하면 6~10번째 글 잘 보이나 확인해봅시다. 
@@ -238,6 +248,7 @@ skip() 의 단점
  
 
 await db.collection('post').find({_id : {$gt : 방금본 마지막게시물_id}}).limit(5).toArray() 
+
 조건을 이렇게 입력하는 겁니다. 
 
 뭔 뜻이냐면 '방금본 마지막 게시물의 _id'보다
@@ -292,6 +303,8 @@ app.get('/list/next/:id', async (요청, 응답) => {
   let result = await db.collection('post').find({_id : {$gt : 마지막게시물_id}}).limit(5)
   응답.render('list.ejs', { 글목록 : result })
 }) 
+
+
 /list/next/:id 라고 URL을 새로 만들어놨습니다.
 
 그리고 방금 본 마지막게시물_id 부분만 채우면 될텐데 이 정보는 어디있죠? 
@@ -311,6 +324,8 @@ app.get('/list/next/:id', async (요청, 응답) => {
  
 
 <a href="/list/next/???">다음</a>
+
+
 list.ejs 페이지에 다음버튼을 만들어봤습니다. 
 
 버튼 눌렀을 때 GET요청날리고 싶으면 fetch같은거 써도 되겠으나
@@ -340,6 +355,7 @@ a태그 써도 GET요청이 날라갑니다.
  
 
 <%= 글목록[글목록.length - 1]._id %> 
+
 그래서 위처럼 코드짜면 array에서 마지막 항목을 출력할 수 있기 때문에 
 
 저러면 마지막 글의 _id가 잘 나올거같군요.
@@ -349,6 +365,7 @@ a태그 써도 GET요청이 날라갑니다.
  
 
 <a href="/list/next/<%= 글목록[글목록.length - 1]._id %>">다음</a>
+
 마지막 글의 _id를 GET요청시 서버로 보내보도록 합시다. 
 
 URL 파라미터자리에 보내봤음 
@@ -365,6 +382,8 @@ app.get('/list/next/:id', async (요청, 응답) => {
   let result = await db.collection('post').find({_id : {$gt : new ObjectId(요청.params.id) }}).limit(5)
   응답.render('list.ejs', { 글목록 : result })
 }) 
+
+
 그럼 다음버튼 눌렀을 때 서버에서 요청.params.id 쓰면 마지막 게시물 _id를 쓸 수 있습니다. 
 
 완성인 것 같은데 

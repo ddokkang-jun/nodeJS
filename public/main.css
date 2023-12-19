@@ -59,3 +59,24 @@ div {
   padding: 15px;
   margin-top: 10px;
 }
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pagination a,
+.pagination .current-page {
+  display: inline-block;
+  padding: 8px 16px;
+  margin: 0 4px;
+  text-decoration: none;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.pagination a:hover {
+  background-color: #eee;
+}

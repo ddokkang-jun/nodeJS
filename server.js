@@ -41,9 +41,25 @@ app.get('/about', function (요청, 응답) {
   응답.sendFile(__dirname + '/about.html');
 });
 
-app.get('/list', async (req, res) => {
-  let result = await db.collection('post').find().toArray();
-  res.render('list.ejs', { list: result });
+app.get('/list/:number', async (req, res) => {
+  const itemsPerPage = 5;
+  const currentPage = parseInt(req.params.number) || 1;
+
+  const totalCount = await db.collection('post').countDocuments();
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  const result = await db
+    .collection('post')
+    .find()
+    .skip((currentPage - 1) * itemsPerPage)
+    .limit(itemsPerPage)
+    .toArray();
+
+  res.render('list.ejs', {
+    list: result,
+    totalPages: totalPages,
+    currentPage: currentPage,
+  });
 });
 
 app.get('/time', (req, res) => {
