@@ -1,3 +1,7 @@
+a {
+  text-decoration: none;
+  color: #000;
+}
 /* 부트스트랩에 설정된 값(margin-bottom:16px)을 수정함 */
 .d-flex {
   margin-bottom: 0;

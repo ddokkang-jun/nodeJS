@@ -1,0 +1,343 @@
+회원기능 만들기 1 (passport, 로그인기능)
+
+ 
+
+0:00 회원기능 한글로 설명부터 
+
+1:39 passport 라이브러리 씁시다
+
+3:47 1. 가입기능
+
+5:23 2. 로그인기능 
+
+7:30 서버는 아이디/비번을 DB와 비교하려면
+
+10:35 passport.authenticate('local')
+
+ 
+
+ 
+
+ 
+
+사이트에 회원기능이 필요하면 회원기능 만들면 되는데
+
+많은 상황에서 가장 기본은 할 수 있는 인증방식이 바로 역사와 전통의 session 방식 회원인증이기 때문에
+
+session 방식으로 회원기능을 구현해봅시다. 
+
+ 
+
+직접 처음부터 쌩으로 코드짜서 구현하려면
+
+대충 이런 스텝으로 코드를 짜면 되는데
+
+ 
+
+1. 가입기능부터 만듭니다.
+
+유저가 입력한 아이디/비번을 DB에 저장해두는게 가입기능 끝 아닙니까
+
+ 
+
+2. 로그인기능 만들면 됩니다. 
+
+로그인폼에서 아이디/비번을 제출하면 DB에 있는거랑 일치하는지 확인하고 일치하면 세션을 하나 만들어줍니다.
+
+ 
+
+3. 세션이뭐냐면 그냥 DB에 document 하나 발행해주는 것일 뿐입니다.
+
+document에 "어떤 유저가 로그인했었고 걔 유효기간은 1월 30일까지다~" 이런거 기록해둡니다. 
+
+ 
+
+4. 세션 document의 _id같은걸 가져와서 
+
+유저에게 전송해서 유저 브라우저 쿠키에 강제 저장시켜줍니다. 입장권생성임
+
+로그인 기능 끝 
+
+ 
+
+5. 이제 유저가 로그인이 필요한 페이지같은거 방문할 때 마다
+
+서버는 유저가 제출한 쿠키를 까보고 
+
+쿠키에 기록되어있는 _id가 실제로 DB에 있는지 확인하고 유효기간도 안지났으면 페이지 보여주면 됩니다. 
+
+ 
+
+여기서 모르는건 쿠키 만들어주는거 정도일 뿐이라 이거 찾아보면 알아서 만들 수 있을 것 같은데
+
+하지만 직접 코드짜면 너무 오래걸리기 때문에 라이브러리를 써봅시다. 
+
+ 
+
+passport 라는 라이브러리를 써볼 것인데
+
+이거 쓰면 논리가없고 지성이 없어도 OAuth, JWT, session 기능을 복붙식으로 쉽게 구현할 수 있습니다.
+
+다른 라이브러리도 많은데 passport 가 인터넷에 예시가 가장 많아서 초보에게 좋음 
+
+ 
+
+npm install express-session passport passport-local 
+
+
+터미널 열어서 이거 설치합시다. 
+
+passport는 회원인증 도와주는 메인라이브러리,
+
+passport-local은 아이디/비번 방식 회원인증쓸 때 쓰는 라이브러리
+
+express-session은 세션 만드는거 도와주는 라이브러리입니다.
+
+ 
+
+ 
+
+const session = require('express-session')
+const passport = require('passport')
+const LocalStrategy = require('passport-local')
+
+app.use(passport.initialize())
+app.use(session({
+  secret: '암호화에 쓸 비번',
+  resave : false,
+  saveUninitialized : false
+}))
+
+app.use(passport.session()) 
+
+
+
+server.js 상단에 복사붙여넣기 하면 passport 라이브러리 셋팅 끝입니다. 
+
+참고로 app.use()가 3개 있는데 순서틀리면 좀 이상해질 수 있습니다. 
+
+ 
+
+- session() 안에 언제 어떻게 세션을 만들지 설정할 수 있는데 
+
+- secret : 안에는 여러분만의 비번 잘 넣어주면 됩니다. 세션문자열같은거 암호화할 때 쓰는데 긴게 좋습니다. 털리면 인생 끝남
+
+- saveUninitialized : 는 유저가 로그인 안해도세션을 저장해둘지 여부 (false 추천)
+
+- resave는 유저가 요청날릴 때 마다 session데이터를 다시 갱신할건지 여부 (false 추천)
+
+이런 설정이 가능합니다. 
+
+나중에 뭔가 바꾸고 싶으면 express session 라이브러리 사용법을 찾아봅시다. 
+
+ 
+
+ 
+
+ 
+
+ 
+
+1. 가입기능만들기 
+
+ 
+
+회원가입 기능이 뭐죠
+
+유저가 아이디 비번을 서버로 보내면 DB에 그걸 저장해두면 끝 아닙니까 
+
+가입기능 만드는건 쉬우니까 여러분들이 집가서 직접 시간나면 해보고 
+
+지금은 시간이 없으니까 그냥 손으로 아이디 비번 한 쌍을 직접 DB에 만들어줍시다. 
+
+ 
+
+ 
+
+
+
+ 
+
+▲ DB들어가서 user라는 이름의 컬렉션 하나 만들고
+
+username : test
+
+password : 1234
+
+이런 document 하나 발행해봅시다. 한 놈 강제가입 끝 
+
+- String 타입이 좋을 것 같군요. 
+
+- 원래 비번은 암호화(해싱)해서 저장하는게 좋습니다 그래야 DB가 털려도 비번은 알 수 없어서 좋은데 지금은 생략합시다.  
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+2. 로그인기능 만들기 
+
+ 
+
+로그인 기능은 어려운게 아니고
+
+누가 아이디/비번을 서버로 보내면 
+
+DB에 있던거랑 비교해보고 일치하면 세션 document를 만들어주는게 전부입니다. 
+
+ 
+
+그래서 유저가 로그인 요청할 수 있는 폼부터 하나 만들어봅시다. 
+
+ejs 페이지 하나 만들고 아이디/비번 전송 폼을 마련해두면 되겠군요. 
+
+ 
+
+app.get('/login', (요청, 응답)=>{
+  응답.render('login.ejs')
+}) 
+
+
+어떤 놈이 /login페이지 방문하면 login.ejs 파일 보내줍시다.
+
+ 
+
+<form class="form-box" action="/login" method="POST">
+    <h4>로그인</h4>
+    <input name="username">
+    <input name="password" type="password">
+    <button type="submit">전송</button>
+</form> 
+
+
+login.ejs 레이아웃은 이렇게 만들었습니다.
+
+여기서 전송누르면 /login으로 POST 요청이 가는데
+
+username이랑 password 라는 이름으로 데이터 2개가 전송되겠네요 
+
+이제 /login으로 오는 POST 요청을 수신만 하면 될거같은데 
+
+ 
+
+ 
+
+app.post('/login', async (요청, 응답, next) => {
+  제출한아이디/비번이 DB에 있는거랑 일치하는지 확인하고 세션생성
+}) 
+
+
+이렇게 코드짜면 로그인 기능 끝입니다. 
+
+근데 직접 구현은 귀찮으니까 passport 라이브러리를 씁시다. 
+
+ 
+
+ 
+
+ 
+
+passport.use(new LocalStrategy(async (입력한아이디, 입력한비번, cb) => {
+  let result = await db.collection('user').findOne({ username : 입력한아이디})
+  if (!result) {
+    return cb(null, false, { message: '아이디 DB에 없음' })
+  }
+  if (result.password == 입력한비번) {
+    return cb(null, result)
+  } else {
+    return cb(null, false, { message: '비번불일치' });
+  }
+}))
+
+
+app.use 많은 곳 하단 쯤에 복사붙여넣기 합시다. 라이브러리 사용법이라 그냥 복붙해서 쓰면 끝입니다. 
+
+new LocalStrategy 어쩌구는 아이디/비번이 DB와 일치하는지 검증하는 로직 짜는 공간입니다.
+
+이거 짜놓으면 앞으로 유저가 제출한 아이디 비번이 DB랑 맞는지 검증하고 싶을 때 이 코드를 실행시키면 되는데 
+
+실행시키는 방법은 API 안에서 passport.authenticate('local') 이런 코드 작성하면 요 코드가 자동으로 실행됩니다. 
+
+(참고) 이 코드 하단에 API들을 만들어야 그 API들은 로그인관련 기능들이 잘 작동합니다.
+
+ 
+
+ 
+
+ 
+
+위의 new LocalStrategy 어쩌구 코드를 잠깐 설명하자면
+
+(1) 누가 아이디/비번을 제출하면 함수 파라미터로 자동으로 신기하게 들어옵니다.
+
+<input name=”username”>  <input name=”password”>
+
+실은 이런 name을 가진 input태그들을 만들고 거기서 아이디/비번을 입력해야 여기로 잘 도착합니다.
+
+ 
+
+(2) 유저가 보낸 아이디/비번과 DB에 있던걸 비교해봅니다.
+
+아이디나 비번이 일치하지 않으면 false를 cb() 안에 넣어주고
+
+일치하면 유저 정보를 cb() 안에 넣어줍니다. 
+
+에러메세지도 넣을 수 있음 
+
+참고로 아이디/비번 말고 다른 것도 검증하고 싶으면 passReqToCallback 옵션 찾아보면 요청.body같은걸 저 코드 안에서 사용가능합니다.
+
+ 
+
+ 
+
+아무튼 방금 적은게 아이디/비번이 DB와 일치하는지 검증하는 코드인데 이거 언제 실행시키고 싶어요? 
+
+유저가 아이디/비번 제출할 때 실행시켜보면 되겠죠? 
+
+ 
+
+ 
+
+app.post('/login', async (요청, 응답, next) => {
+
+  passport.authenticate('local', (error, user, info) => {
+      if (error) return 응답.status(500).json(error)
+      if (!user) return 응답.status(401).json(info.message)
+      요청.logIn(user, (err) => {
+        if (err) return next(err)
+        응답.redirect('/')
+      })
+  })(요청, 응답, next)
+}) 
+
+
+passport.authenticate('local', 콜백함수)(요청, 응답, next) 이런 코드 작성하면 아까 그 검증하는 코드가 실행됩니다.
+
+ 
+
+검증 성공이나 실패시 뭔가 실행하고 싶으면 콜백함수 안에 작성해주라고 하는군요.
+
+ 
+
+- 콜백함수의 첫째 파라미터는 뭔가 에러시 뭔가 들어옴
+
+- 둘째 파라미터는 아이디/비번 검증 완료된 유저정보가 들어옴
+
+- 셋째는 아이디/비번 검증 실패시 에러메세지가 들어옴
+
+ 
+
+그래서 예외처리는 대충 위처럼 하면 되겠습니다.
+
+이것도 이해보다는 라이브러리 사용법이라 복붙의 영역입니다. 
+
+잘 이해하고 싶으면 파라미터들이 진짜로 그런 정보들이 들어오는지 출력정도만 해보면 됩니다.
+
+ 
+
+그리고 검증 성공시 요청.logIn() 이라는 함수 실행하면 세션을 만들어주는데 그건 다음 시간에 마무리해봅시다. 

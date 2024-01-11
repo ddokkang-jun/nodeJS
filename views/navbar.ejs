@@ -27,6 +27,8 @@
           <a class="nav-link" href="/write">글쓰기</a>
         </li>
       </ul>
+      <button class="registerBtn"><a href="/register">회원가입</a></button>
+      <button class="loginBtn"><a href="/login">로그인</a></button>
       <form class="d-flex" role="search">
         <input
           class="form-control me-2"
@@ -39,3 +41,29 @@
     </div>
   </div>
 </nav>
+<!-- <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+  document.querySelector('.registerBtn').addEventListener('click', () => {
+    axios
+      .get('/register')
+      .then((response) => {
+        // 서버에서 받은 HTML을 현재 페이지에 업데이트
+        document.documentElement.innerHTML = response.data;
+      })
+      .catch((error) => {
+        console.log(error + '에러남');
+      });
+  });
+
+  document.querySelector('.loginBtn').addEventListener('click', () => {
+    axios
+      .get('/login')
+      .then((response) => {
+        // 서버에서 받은 HTML을 현재 페이지에 업데이트
+        document.documentElement.innerHTML = response.data;
+      })
+      .catch((error) => {
+        console.log(error + '에러남');
+      });
+  });
+</script> -->

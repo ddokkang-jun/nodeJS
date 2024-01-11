@@ -17,8 +17,14 @@
     <div class="detail-bg">
       <h4><%= detail.title %></h4>
       <p><%= detail.content %></p>
+      <img src="<%= detail.img %>" alt="" />
       <span><a href="/edit/<%= detail._id %>">글수정하기</a></span>
-      <a href="/list" class="delete" data-id="<%= detail._id %>" type="submit">
+      <a
+        href="/list/1"
+        class="delete"
+        data-id="<%= detail._id %>"
+        type="submit"
+      >
         글삭제🗑️
       </a>
     </div>

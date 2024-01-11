@@ -1,30 +1,87 @@
 const express = require('express');
 const app = express();
 const { MongoClient, ObjectId } = require('mongodb');
-
-// form에서 put, delete 요청 가능하도록 셋팅 (수업참고 : part2-07번)
 const methodOverride = require('method-override');
-app.use(methodOverride('_method'));
+const bcrypt = require('bcrypt');
+require('dotenv').config();
 
-// 스타일 폴더 서버에 등록하기
+app.use(methodOverride('_method'));
 app.use(express.static(__dirname + '/public'));
-// express 에서 ejs 사용등록하기
 app.set('view engine', 'ejs');
-//요청.body 를 사용하기위한 셋팅코드
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const session = require('express-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const MongoStore = require('connect-mongo');
+
+app.use(passport.initialize());
+app.use(
+  session({
+    secret: '암호화에 쓸 비번',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 60 * 60 * 1000 },
+    store: MongoStore.create({
+      mongoUrl: process.env.DB_URL,
+      dbName: 'forum',
+    }),
+  })
+);
+app.use(passport.session());
+
+// aws 라이브러리 셋팅코드
+const { S3Client } = require('@aws-sdk/client-s3');
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+const s3 = new S3Client({
+  region: 'ap-northeast-2',
+  credentials: {
+    accessKeyId: process.env.S3_KEY,
+    secretAccessKey: process.env.S3_SECRET,
+  },
+});
+
+const upload = multer({
+  storage: multerS3({
+    s3: s3,
+    bucket: 'kazuy0002firstforumbucket',
+    key: function (요청, file, cb) {
+      cb(null, Date.now().toString()); //업로드시 파일명 변경가능
+    },
+  }),
+});
+
+// 미들웨어
+app.use('/list', checkoutTime);
+
+function checkoutTime(req, res, next) {
+  // 미들웨어 수업 1번째 숙제
+  let time = new Date();
+  console.log('현재시간 :', time);
+  next();
+}
+
+function checkUser(req, res, next) {
+  // 미들웨어 수업 2번째 숙제
+  if (req.body.username == '' || req.body.password == '') {
+    res.send('그러지마세요');
+  } else {
+    next();
+  }
+}
+
 // 몽고디비연결
 let db;
-const url =
-  'mongodb+srv://admin:qwer1234@cluster0.5lk2o3z.mongodb.net/?retryWrites=true&w=majority';
+const url = process.env.DB_URL;
 new MongoClient(url)
   .connect()
   .then((client) => {
     console.log('1 : DB연결성공');
     db = client.db('forum');
 
-    app.listen(8080, () => {
+    app.listen(process.env.PORT, () => {
       console.log('2 : http://localhost:8080 에서 서버 실행중');
     });
   })
@@ -106,15 +163,25 @@ app.get('/edit/:id', async (req, res) => {
 });
 
 // post 요청
-app.post('/add', async (req, res) => {
+app.post('/add', upload.single('img1'), async (req, res) => {
+  //console.log(req.file);
+
+  // if (!req.file) {
+  //   console.log('사진파일이 없음');
+  // } else {
+  //   console.log('사진파일이 있음');
+  // }
+
   try {
     if (req.body.title == '' || req.body.content == '') {
       res.send('빈곳이 있으면 안뎀');
     } else {
-      await db
-        .collection('post')
-        .insertOne({ title: req.body.title, content: req.body.content });
-      res.redirect('/list');
+      await db.collection('post').insertOne({
+        title: req.body.title,
+        content: req.body.content,
+        img: req.file.location,
+      });
+      res.redirect('/list/1');
     }
   } catch (error) {
     res.send('에러남', error);
@@ -132,11 +199,84 @@ app.post('/edit', async (req, res) => {
           { _id: new ObjectId(req.body.id) },
           { $set: { title: req.body.title, content: req.body.content } }
         );
-      res.redirect('/list');
+      res.redirect('/list/1');
     }
   } catch (error) {
     res.send('에러남', error);
   }
+});
+
+passport.use(
+  new LocalStrategy(async (입력한아이디, 입력한비번, cb) => {
+    let result = await db
+      .collection('user')
+      .findOne({ username: 입력한아이디 });
+    if (!result) {
+      return cb(null, false, { message: '아이디 DB에 없음' });
+    }
+    if (await bcrypt.compare(입력한비번, result.password)) {
+      return cb(null, result);
+    } else {
+      return cb(null, false, { message: '비번불일치' });
+    }
+  })
+);
+
+passport.serializeUser((user, done) => {
+  process.nextTick(() => {
+    done(null, { id: user._id, username: user.username });
+  });
+});
+
+passport.deserializeUser(async (user, done) => {
+  let result = await db
+    .collection('user')
+    .findOne({ _id: new ObjectId(user.id) });
+  delete result.password;
+  process.nextTick(() => {
+    return done(null, result);
+  });
+});
+
+app.get('/login', (req, res) => {
+  res.render('login.ejs');
+});
+
+app.post('/login', checkUser, async (요청, 응답, next) => {
+  passport.authenticate('local', (error, user, info) => {
+    if (error) return 응답.status(500).json(error);
+    if (!user) return 응답.status(401).json(info.message);
+    요청.logIn(user, (err) => {
+      if (err) return next(err);
+      응답.redirect('/');
+    });
+  })(요청, 응답, next);
+});
+
+app.get('/register', (req, res) => {
+  res.render('register.ejs');
+});
+
+app.post('/register', checkUser, async (req, res) => {
+  const username = req.body.username;
+  const password = await bcrypt.hash(req.body.password, 10);
+
+  // if (!username || !password) {
+  //   return res.status(400).send('username or password is missing');
+  // }
+  // 미들웨어서 확인해도록 해놔서 생략함.
+
+  const existingUser = await db.collection('user').findOne({ username });
+
+  if (existingUser) {
+    return res.status(409).send('username is already exists');
+  }
+
+  await db.collection('user').insertOne({
+    username,
+    password,
+  });
+  res.redirect('/');
 });
 
 // delete 요청
